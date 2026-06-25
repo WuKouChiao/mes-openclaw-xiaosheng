@@ -110,7 +110,7 @@
 | 值 | 含义 | 说明 |
 |------|------|------|
 | TO_CONFIRM | 待确认 | 新建订单，尚未确认 |
-| RELEASED | 已下达 | 已确认下达，正在进行的订单 |
+| RELEASED | 已下达 | 已确认下达，进行中的订单 |
 | COMPLETED | 已完成 | 订单执行完成 |
 | CLOSED | 已关闭 | 订单归档关闭 |
 | CANCEL | 已取消 | 订单已取消 |
@@ -243,7 +243,28 @@ Q: 查近一周新创建的订单
 
 ---
 
-## 6. 货位主数据 — md_goods_location
+## 6. 存储地点 — md_storage_location
+
+| 字段 | 含义 |
+|------|------|
+| HANDLE | 主键 |
+| SITE | 站点 |
+| STORAGE_LOCATION | 存储地点编码 |
+| STORAGE_LOCATION_DESC | 描述 |
+| STORAGE_LOCATION_CATEGORY | 类别 |
+| STORAGE_LOCATION_STATUS | 状态 |
+
+### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| STORAGE_LOCATION | wm_inventory | STORAGE_LOCATION_BO | 库存记录通过此字段关联存储地点编码 |
+
+The current date is 2026-06-25.
+
+---
+
+## 7. 货位主数据 — md_goods_location
 
 | 字段 | 含义 |
 |------|------|
@@ -258,7 +279,7 @@ Q: 查近一周新创建的订单
 
 ---
 
-## 7. 货位绑定 — wm_goods_location_binding
+## 8. 货位绑定 — wm_goods_location_binding
 
 #### 关联
 
