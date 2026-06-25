@@ -15,7 +15,7 @@ description: "MES 系统 API 参考：通用表查询、订单聚合接口，bas
 |------|------|------|
 | GET | /api/tables | 列出所有表 |
 | GET | /api/tables/{name}/columns | 查表结构 |
-| GET | /api/tables/{name}?page=1&size=50&filter={"col1":"val1"} | 分页查询数据，filter 为 JSON 格式 |
+| GET | /api/tables/{name}?page=1&size=50&filter={"col1":"val1"}&sort=CREATE_TIME&order=desc | 分页查询数据，filter 为 JSON 格式，sort/order 可选排序 |
 
 ## 订单聚合接口
 

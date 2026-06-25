@@ -131,8 +131,8 @@
 
 ```
 Q: 查最近的销售订单
-→ GET /api/tables/sd_order?filter={"ORDER_CATEGORY":"ORDER"}&size=20
-→ 注意：SITE 需要指定工厂
+→ GET /api/tables/sd_order?filter={"ORDER_CATEGORY":"ORDER"}&sort=CREATE_TIME&order=desc&size=20
+→ 注意：SITE 需要指定工厂，sort/order 保证返回最新记录
 
 Q: 查采购订单
 → GET /api/tables/sd_order?filter={"ORDER_CATEGORY":"OEM"}&size=20
@@ -249,6 +249,32 @@ Q: 查近一周新创建的订单
 
 ---
 
+## 5.5 控制批次 — pd_control_batch
+
+#### 业务知识
+
+- **理货记录在此表**：理货人员（LH_USER）和理货时间（LH_TIME）记录在 pd_control_batch
+- **理货数量**：QTY_LH 记录理货后的实际数量
+- **关联订单**：通过 ORDER_NO 关联 sd_order，CONTROL_BATCH 关联 sd_order_detail
+
+#### 理货相关字段
+
+| 字段 | 含义 |
+|------|------|
+| LH_USER | 理货人 |
+| LH_TIME | 理货时间 |
+| QTY_LH | 理货数量 |
+
+#### 常见查询
+
+```
+Q: 查看今天的理货情况
+→ GET /api/tables/pd_control_batch?filter={"SITE":"3100"}&sort=LH_TIME&order=desc&size=50
+→ 过滤 LH_TIME 为今天的记录，按理货时间倒序
+```
+
+---
+
 ## 6. 存储地点 — md_storage_location
 
 | 字段 | 含义 |
@@ -307,3 +333,38 @@ The current date is 2026-06-25.
 | ITEM_BO | 物料 |
 | PACKAGES | 箱/件数 |
 | LOCATION | 位置 |
+
+---
+
+## 9. 系统用户 — sys_user
+
+| 字段 | 含义 |
+|------|------|
+| HANDLE | 主键 |
+| USER_NO | 用户编号 |
+| USER_NAME | 用户姓名 |
+| ROLE | 角色 |
+| DEPARTMENT | 部门 |
+| IS_DISABLE | 是否禁用 |
+| EMAIL | 邮箱 |
+| PHONE | 联系电话 |
+| FACE_ID | 人脸ID |
+
+### 通用规则
+
+**所有表的 CREATE_BY 和 UPDATE_BY 字段都可以通过 USER_NO 关联 sys_user 获取用户姓名。**
+
+例外：pd_control_batch.LH_USER（理货人）也关联 USER_NO。
+
+查询理货人姓名示例：
+```
+先查 pd_control_batch 拿 LH_USER → 再查 sys_user filter={"USER_NO":"<LH_USER值>"} 拿 USER_NAME
+```
+
+### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| 任意表.CREATE_BY | sys_user | USER_NO | 创建人姓名 |
+| 任意表.UPDATE_BY | sys_user | USER_NO | 更新人姓名 |
+| pd_control_batch.LH_USER | sys_user | USER_NO | 理货人姓名 |

@@ -8,3 +8,6 @@
 [2026-06-25 06:48] ✅ 已解决 | 库存拆分明细分散 | 同一 CONTROL_BATCH 多条库存记录为正常业务现象（完工产出分批入库等），按批次聚合汇总+保留明细展示
 [2026-06-25 06:51] ✅ 已解决 | filter 值含逗号解析失败 | mes-query-api 已修复，支持值内逗号过滤
 [2026-06-25 07:14] 小生 | "查看今日的投料情况" | 投料记录的精确查询路径 | 不清楚投料对应哪个表/接口（pd_sfc/pd_control_batch/pp_dispatch_detail/wm_material_movement？），需要明确投料的业务定义和数据来源
+[2026-06-25 07:59] ✅ 已解决 | 理货查询 | pd_control_batch.LH_USER（理货人）/ LH_TIME（理货时间）/ QTY_LH（理货数量），按 ORDER_NO 关联订单
+[2026-06-25 07:40] ✅ 已解决 | size=10 查到旧数据 | 后端排序已修复，查最新数据加 sort=CREATE_TIME&order=desc 即可
+[2026-06-25 07:40] ✅ 已解决 | 接口排序参数不生效 | 后端已修复，sort/order 参数生效，默认 sort=CREATE_TIME&order=desc
