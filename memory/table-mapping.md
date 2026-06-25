@@ -243,7 +243,28 @@ Q: 查近一周新创建的订单
 
 ---
 
-## 6. 货位绑定 — wm_goods_location_binding
+## 6. 货位主数据 — md_goods_location
+
+| 字段 | 含义 |
+|------|------|
+| HANDLE | 主键 |
+| SITE | 站点 |
+| GOODS_LOCATION | 货位编码 |
+| GOODS_LOCATION_GROUP | 货架 |
+| GOODS_LOCATION_DESC | 描述 |
+| GOODS_LOCATION_CATEGORY | 类别 |
+| GOODS_LOCATION_STATUS | 状态 |
+| STORAGE_LOCATION_BO | 存储地点 |
+
+---
+
+## 7. 货位绑定 — wm_goods_location_binding
+
+#### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| GOODS_LOCATION_BO | md_goods_location | HANDLE | 拿货位编码和描述 |
 
 #### 字段说明
 
@@ -251,7 +272,7 @@ Q: 查近一周新创建的订单
 |------|------|
 | HANDLE | 主键 |
 | SITE | 站点 |
-| GOODS_LOCATION_BO | 货位 BO |
+| GOODS_LOCATION_BO | 货位 BO | 关联 md_goods_location.HANDLE |
 | REF_TYPE | 上架类型（INVENTORY=库存，SFC=WIP） |
 | REF_GBO | 上架值（关联来源表的 HANDLE） |
 | QTY | 上架实时数量 |
