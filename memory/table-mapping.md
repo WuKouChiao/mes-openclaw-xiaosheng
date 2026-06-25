@@ -215,7 +215,7 @@ Q: 查近一周新创建的订单
 
 ---
 
-## 5. SFC 生产批次 — pd_sfc
+## 5. SFC 信息 — pd_sfc
 
 #### 字段说明
 
@@ -249,7 +249,7 @@ Q: 查近一周新创建的订单
 
 ---
 
-## 5.5 控制批次 — pd_control_batch
+## 5.5 控制批次信息 — pd_control_batch
 
 #### 业务知识
 
@@ -271,6 +271,59 @@ Q: 查近一周新创建的订单
 Q: 查看今天的理货情况
 → GET /api/tables/pd_control_batch?filter={"SITE":"3100"}&sort=LH_TIME&order=desc&size=50
 → 过滤 LH_TIME 为今天的记录，按理货时间倒序
+```
+
+---
+
+## 5.6 投料/物料消耗记录 — pd_item_assy
+
+#### 业务知识
+
+- **pd_item_assy 是物料消耗记录表**，核心字段是 ASSY_STATUS（消耗状态），ASSY_MESSAGE 是辅助描述
+- **"投料" = ASSY_STATUS=1**：库存(INVENTORY)物料投入到生产(SFC)
+- 用户问"投料情况"时，过滤 `ASSY_STATUS=1`
+
+#### ASSY_STATUS 状态值
+
+| STATUS | ASSY_TYPE | ASSY_MESSAGE(描述) | 含义 |
+|--------|------|------|------|
+| 0 | CONTROL_BATCH | (空) | 批次级消耗 |
+| 1 | INVENTORY | 投料 | 库存投料到生产 |
+| 2 | SFC | 包装 | SFC间包装消耗 |
+| 3 | SFC | 完工记录 | 完工物料消耗 |
+| 6 | INVENTORY | 202包装消耗 | 202包装物料消耗 |
+| 10 | INVENTORY | 201完工记录 | 201完工物料消耗 |
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| ASSY_STATUS | 消耗状态（核心字段，用此字段筛选业务类型） |
+| ASSY_MESSAGE | 消耗描述（辅助字段） |
+| ASSY_TYPE | 消耗对象类型（INVENTORY/SFC/CONTROL_BATCH） |
+| QTY | 消耗数量 |
+| COMPONENT_ITEM_BO | 消耗物料 |
+| CREATE_TIME | 消耗时间 |
+| CREATE_BY | 操作人 |
+
+#### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| COMPONENT_ITEM_BO | md_item | HANDLE | 拿物料编码和描述 |
+| CREATE_BY | sys_user | USER_NO | 操作人姓名 |
+
+#### 常见查询
+
+```
+Q: 查看今天的投料情况
+→ GET /api/tables/pd_item_assy?filter={"SITE":"3100","ASSY_STATUS":"1"}&sort=CREATE_TIME&order=desc&size=50
+
+Q: 查看今天全部物料消耗
+→ GET /api/tables/pd_item_assy?filter={"SITE":"3100"}&sort=CREATE_TIME&order=desc&size=50
+
+Q: 查包装消耗
+→ GET /api/tables/pd_item_assy?filter={"SITE":"3100","ASSY_STATUS":"2"}&sort=CREATE_TIME&order=desc&size=50
 ```
 
 ---
@@ -368,3 +421,81 @@ The current date is 2026-06-25.
 | 任意表.CREATE_BY | sys_user | USER_NO | 创建人姓名 |
 | 任意表.UPDATE_BY | sys_user | USER_NO | 更新人姓名 |
 | pd_control_batch.LH_USER | sys_user | USER_NO | 理货人姓名 |
+
+---
+
+## 10. 批次拆合记录 — pd_lot_history
+
+#### 业务知识
+
+- **记录批次/库存/SFC 的拆分与合并操作**：OP_CATEGORY=SPLIT 为拆分，MERGE 为合并
+- **FROM → TO 的物料流转**：FROM_REF_TYPE/GBO 为来源，TO_REF_TYPE/GBO 为目标
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| OP_CATEGORY | 操作类型（SPLIT=拆分, MERGE=合并） |
+| FROM_REF_TYPE | 来源类型（SFC/INVENTORY） |
+| FROM_REF_GBO | 来源值 |
+| TO_REF_TYPE | 目标类型（SFC/INVENTORY） |
+| TO_REF_GBO | 目标值 |
+| QTY | 操作数量 |
+| OPERATION_BO | 工序 |
+| RESOURCE_BO | 资源 |
+| T_CODE | 事务码 |
+| CREATE_TIME | 操作时间 |
+| CREATE_BY | 操作人 |
+
+---
+
+## 11. 工序主数据 — md_operation
+
+| 字段 | 含义 |
+|------|------|
+| HANDLE | 主键（OPERATION_BO 关联此字段） |
+| SITE | 站点 |
+| OPERATION | 工序编码 |
+| OPERATION_DESC | 工序描述 |
+| OPERATION_CATEGORY | 工序类别 |
+| OPERATION_STATUS | 工序状态 |
+| OPERATION_GROUP | 工序组 |
+| ERP_OPERATION | ERP工序编号 |
+| DEFAULT_RESOURCE_TYPE_BO | 默认资源类型 |
+
+### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| pd_item_assy.OPERATION_BO | md_operation | HANDLE | 消耗记录的工序信息 |
+| pd_lot_history.OPERATION_BO | md_operation | HANDLE | 流转记录的工序信息 |
+
+---
+
+## 12. 生产日志 — pd_production_log
+
+#### 业务知识
+
+- **记录每个 SFC 在每道工序的生产过程**：包含工序、资源、物料、数量、时间等完整信息
+- **产量统计**：QTY（生产数量）、QTY_SCRAPPED（报废）、QTY_DONE（完工入库）
+- **工时统计**：START_TIME → COMPLETE_TIME → USED_TIME
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| SFC | SFC编码 |
+| SHOP_ORDER | 工单号 |
+| DISPATCH_NO | 派工单号 |
+| STATUS | 状态 |
+| OPERATION | 工序编码 |
+| OPERATION_DESC | 工序描述 |
+| RESOURCE | 资源编码 |
+| RESOURCE_DESC | 资源描述 |
+| QTY | 生产数量 |
+| QTY_SCRAPPED | 报废数量 |
+| QTY_DONE | 完工入库数量 |
+| START_TIME | 开始时间 |
+| COMPLETE_TIME | 完成时间 |
+| USED_TIME | 用时 |
+| ACTIVITY | 操作作业 |
