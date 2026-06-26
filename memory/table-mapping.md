@@ -247,6 +247,27 @@ Q: 查近一周新创建的订单
 | REF_TYPE=shopOrder, REF_GBO | pp_shop_order | HANDLE | 关联生产工单 |
 | REF_TYPE=item, REF_GBO | md_item | HANDLE | 关联物料 |
 
+## 5.1 SFC 扩展属性 — pd_sfc_data
+
+#### 业务知识
+
+- **SFC 的键值对扩展属性表**：存储 SFC 的补充属性（ATTRIBUTE → VALUE）
+- **SFC_BO** 关联 pd_sfc.HANDLE，一张 SFC 可有多条属性
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| SFC_BO | SFC 主键（关联 pd_sfc.HANDLE） |
+| ATTRIBUTE | 属性名 |
+| VALUE | 属性值 |
+
+#### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| SFC_BO | pd_sfc | HANDLE | 关联 SFC 主记录 |
+
 ---
 
 ## 5.5 控制批次信息 — pd_control_batch
@@ -366,6 +387,11 @@ The current date is 2026-06-25.
 
 ## 8. 货位绑定 — wm_goods_location_binding
 
+#### 业务知识
+
+- **当前生效的货位绑定**：记录库存/WIP 在哪个货位上
+- **历史记录**：wm_goods_location_binding_log 记录绑定变更历史，含 BINDING_STATUS
+
 #### 关联
 
 | 从字段 | 到表 | 到字段 | 说明 |
@@ -386,6 +412,28 @@ The current date is 2026-06-25.
 | ITEM_BO | 物料 |
 | PACKAGES | 箱/件数 |
 | LOCATION | 位置 |
+
+## 8.5 货位绑定日志 — wm_goods_location_binding_log
+
+#### 业务知识
+
+- **货位绑定的变更历史**：每当库存/WIP 更换货位时，记录一条日志
+- **BINDING_STATUS**：绑定/解绑状态，可追溯货位变更轨迹
+
+| 字段 | 含义 |
+|------|------|
+| GOODS_LOCATION_BO | 货位 BO |
+| REF_TYPE | 上架类型（INVENTORY/SFC） |
+| REF_GBO | 上架值 |
+| QTY | 数量 |
+| QTY_LOAD | 上架数量 |
+| ITEM_BO | 物料 |
+| BINDING_STATUS | 绑定状态 |
+| PACKAGES | 箱/件数 |
+| LOCATION | 位置 |
+| T_CODE | 事务码 |
+| CREATE_TIME | 操作时间 |
+| CREATE_BY | 操作人 |
 
 ---
 
@@ -499,3 +547,42 @@ The current date is 2026-06-25.
 | COMPLETE_TIME | 完成时间 |
 | USED_TIME | 用时 |
 | ACTIVITY | 操作作业 |
+
+---
+
+## 13. 载具绑定 — pd_carrier_binding
+
+#### 业务知识
+
+- **记录 SFC/物料与载具（挂具、料架等）的绑定关系**
+- **载具编号**：CARRIER_NO，关联 REF_TYPE/REF_OBJ 指定绑定的对象
+- **同期表**：pd_carrier_binding 为当前生效的绑定，pd_carrier_binding_history 为历史绑定记录（含 BINDING_STATUS）
+
+#### 关键字段
+
+| 字段 | 含义 |
+|------|------|
+| CARRIER_NO | 载具编号 |
+| REF_TYPE | 关联类型（SFC/INVENTORY等） |
+| REF_OBJ | 关联值 |
+| SOURCE_TYPE | 来源类型 |
+| SOURCE_OBJ | 来源对象 |
+| QTY | 数量 |
+| QTY_L | 体积(升) |
+| LOCATION | 位置 |
+
+## 14. 载具绑定历史 — pd_carrier_binding_history
+
+| 字段 | 含义 |
+|------|------|
+| CARRIER_NO | 载具编号 |
+| REF_TYPE | 关联类型 |
+| REF_OBJ | 关联值 |
+| BINDING_STATUS | 绑定状态（当前/已解绑） |
+| SOURCE_TYPE | 来源类型 |
+| SOURCE_OBJ | 来源对象 |
+| QTY | 数量 |
+| QTY_L | 体积(升) |
+| LOCATION | 位置 |
+| CREATE_TIME | 操作时间 |
+| CREATE_BY | 操作人 |

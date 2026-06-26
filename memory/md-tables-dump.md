@@ -59,7 +59,6 @@
 - [md_router_config_detail](#md_router_config_detail) — 工艺路线配置明细
 - [md_router_next_step](#md_router_next_step) — 工艺路线下一步
 - [md_router_rolling_plating_en_param_recommend](#md_router_rolling_plating_en_param_recommend) — 滚镀 EN 参数推荐
-- [md_router_rolling_plating_input_param](#md_router_rolling_plating_input_param) — 滚镀输入参数
 - [md_router_step](#md_router_step) — 工艺路线步骤
 - [md_router_step_conf](#md_router_step_conf) — 工艺路线步骤配置
 - [md_router_step_dy_router](#md_router_step_dy_router) — 工艺路线步骤动态工艺路线
@@ -100,7 +99,6 @@
 - [md_router_config_detail](#md_router_config_detail) — 工艺路线配置明细
 - [md_router_next_step](#md_router_next_step) — 工艺路线下一步骤
 - [md_router_rolling_plating_en_param_recommend](#md_router_rolling_plating_en_param_recommend) — 滚镀 EN 参数推荐
-- [md_router_rolling_plating_input_param](#md_router_rolling_plating_input_param) — 工艺路线滚镀输入参数
 - [md_router_step](#md_router_step) — 工艺路线步骤定义
 - [md_router_step_conf](#md_router_step_conf) — 工艺路线步骤配置
 - [md_router_step_dy_router](#md_router_step_dy_router) — 工艺路线步骤动态工艺路线
@@ -1171,43 +1169,6 @@
 | OUTSIDE_CONTROL | varchar(255) | 外径控制(MM) |
 | DD_DJ_DENSITY | varchar(50) | 电解槽的电流密度 |
 
-## md_router_rolling_plating_input_param
-> 工艺路线滚镀输入参数
-
-| 列名 | 类型 | 注释 |
-|------|------|------|
-| HANDLE | bigint | 主键 |
-| SITE | varchar(10) | 站点 |
-| ROUTER | varchar(50) | 工艺路线编码 |
-| ROUTER_REVISION | varchar(10) | 工艺路线版本号 |
-| PROGRAM_NO | varchar(100) | 程序号 |
-| PRODUCT_SURFACE_AREA | varchar(255) | 表面积 |
-| DD_NZ_DENSITY | varchar(50) | 锌镍槽的电流密度 |
-| DD_ZN_DENSITY | varchar(50) | 酸锌槽的电流密度 |
-| RECOMMENDED_QTY | decimal(18,3) | 推荐装载量 |
-| FB_OPERATION | varchar(50) | 封闭类型 |
-| CREATE_BY | varchar(32) | 创建人 |
-| CREATE_TIME | datetime(3) | 创建时间 |
-| UPDATE_BY | varchar(32) | 更新人 |
-| UPDATE_TIME | datetime(3) | 更新时间 |
-| EN_ITEM | varchar(50) | EN编码 |
-| STATUS | varchar(20) | 状态(OPEN/CLOSE) |
-| VERSION | varchar(5) | 版本号 |
-| RECOMMEND_REASON | varchar(255) | 推荐原因 |
-| CQ_TIME | varchar(20) | 除氢时间 |
-| HEAT_FLAG | varchar(50) | 是否热处理 |
-| MATERIAL_REQUIRE | varchar(50) | 材质要求 |
-| OUTSIDE_CONTROL | varchar(50) | 外径控制(MM) |
-| MH_UPPER | varchar(50) | 膜厚上限 |
-| MH_FLOOR | varchar(50) | 膜厚下限 |
-| CQ_TEMPERATURE | varchar(50) | 除氢温度(h) |
-| CQ_TIMELINESS | varchar(50) | 除氢及时性(出电镀到除氢的时间h) |
-| NSS_WHITE_RUST_FREE_TIME | varchar(50) | 无白锈时间 |
-| NSS_RED_RUST_FREE_TIME | varchar(50) | 无红锈时间 |
-| NSS_NO_CHANGE_TIME | varchar(50) | 不变化时间 |
-| REF_TYPE | varchar(20) | 关联类型 |
-| REF_OBJ | varchar(50) | 关联对象 |
-| DD_DJ_DENSITY | varchar(50) | 电解槽的电流密度 |
 
 ## md_router_step
 > 工艺路线步骤定义
