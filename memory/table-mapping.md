@@ -545,7 +545,7 @@ The current date is 2026-06-25.
 | SEQUENCE | DECIMAL | 序号 | |
 | DISPATCH_NO | VARCHAR | 派工单号 | 核心标识，格式如 V260623016022_2026-06-23、AI_xxx_xxx |
 | SHOP_ORDER_BO | VARCHAR | 工单 BO | 关联 pp_shop_order.HANDLE |
-| DISPATCH_OPERATION_BO | VARCHAR | 派工工序 BO | 关联 md_operation.HANDLE |
+| DISPATCH_OPERATION_BO | VARCHAR | 派工工序 BO | ⚠️ 未使用，生产环境为 null |
 | DISPATCH_STATUS | VARCHAR | 派工状态 | PLAN/RELEASED/COMPLETED |
 | DISPATCH_CATEGORY | VARCHAR | 派工分类 | A=正常, B=返工, C=客户来料返工 |
 | REF_TYPE | VARCHAR | 关联类型 | 目前全为 WORK_CENTER |
