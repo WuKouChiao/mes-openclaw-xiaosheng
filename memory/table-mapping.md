@@ -303,6 +303,7 @@ Q: 查看今天的理货情况
 - **pd_item_assy 是物料消耗记录表**，核心字段是 ASSY_STATUS（消耗状态），ASSY_MESSAGE 是辅助描述
 - **"投料" = ASSY_STATUS=1**：库存(INVENTORY)物料投入到生产(SFC)
 - 用户问"投料情况"时，过滤 `ASSY_STATUS=1`
+- **投料库存拆分逻辑**：来料库存（如 V202606230788）不会直接出现在 pd_item_assy.ASSY_OBJ 中。系统会先从原库存拆分出新的库存ID（如 V202606240331，同 CONTROL_BATCH、同库位、同物料），然后消耗拆分后的库存ID去投料。查某来料库存的投料记录时，需通过 CONTROL_BATCH 找到所有同批次库存，再查这些库存ID的 pd_item_assy 消耗记录
 
 #### ASSY_STATUS 状态值
 
@@ -520,7 +521,119 @@ The current date is 2026-06-25.
 
 ---
 
-## 12. 生产日志 — pd_production_log
+## 12. 派工明细 — pp_dispatch_detail
+
+#### 业务知识
+
+- **派工明细 = 工单的工序级派工记录**：一个工单（pp_shop_order）可以被多次派工，每条 pp_dispatch_detail 是工单在一道工序上的一次派工
+- **派工单号 DISPATCH_NO** 是生产执行的核心标识，贯穿 pd_production_log / pd_sfc 等表
+- **数量流转**：QTY_DISPATCH（派工数量）→ QTY_RELEASED（下达数量）→ QTY_DONE（完工数量），报废数量记在 QTY_SCRAPPED
+- **QTY_RELEASED > QTY_DISPATCH 正常**：实际下达数量可能因为超投/补投而超出原计划派工数量（如示例中派工85但下达125.61）
+- **DISPATCH_STATUS 状态**：
+  - PLAN → 已排产，尚未下达
+  - RELEASED → 已下达，生产中（QTY_RELEASED > 0）
+  - COMPLETED → 已完成（ACTUAL_COMP_DATE 有值）
+- **DISPATCH_CATEGORY**：A=正常派工（绝大多数），B/C=特殊类型（占少数）
+- **REF_TYPE**：目前全为 WORK_CENTER（工作中心），通过 REF_OBJ 关联 md_work_center
+
+#### 字段说明
+
+| 字段 | 类型 | 含义 | 备注 |
+|------|------|------|------|
+| HANDLE | VARCHAR | 唯一标识（主键） | 格式: PpDispatchBO:3100,{DISPATCH_NO} |
+| SITE | VARCHAR | 站点/工厂 | |
+| SEQUENCE | DECIMAL | 序号 | |
+| DISPATCH_NO | VARCHAR | 派工单号 | 核心标识，格式如 V260623016022_2026-06-23、AI_xxx_xxx |
+| SHOP_ORDER_BO | VARCHAR | 工单 BO | 关联 pp_shop_order.HANDLE |
+| DISPATCH_OPERATION_BO | VARCHAR | 派工工序 BO | 关联 md_operation.HANDLE |
+| DISPATCH_STATUS | VARCHAR | 派工状态 | PLAN/RELEASED/COMPLETED |
+| DISPATCH_CATEGORY | VARCHAR | 派工类型 | A=正常派工, B=特殊, C=特殊 |
+| REF_TYPE | VARCHAR | 关联类型 | 目前全为 WORK_CENTER |
+| REF_OBJ | VARCHAR | 工作中心 BO | 关联 md_work_center.HANDLE |
+| ACTUAL_START_DATE | DATETIME | 实际开始时间 | RELEASED 后赋值 |
+| ACTUAL_COMP_DATE | DATETIME | 实际完成时间 | COMPLETED 后赋值 |
+| QTY_DISPATCH | DECIMAL | 派工数量 | 计划派工数 |
+| QTY_RELEASED | DECIMAL | 下达数量 | 实际投入数量（可大于派工数） |
+| QTY_SCRAPPED | DECIMAL | 报废数量 | |
+| QTY_DONE | DECIMAL | 完工数量 | 实际产出数量 |
+| START_ROUTER_STEP_BO | VARCHAR | 起始工艺步骤 | |
+| DISPATCH_ROUTER_STEP_BO | VARCHAR | 派工工艺步骤 | |
+| END_ROUTER_STEP_BO | VARCHAR | 终止工艺步骤 | |
+| SHIFT | VARCHAR | 班次 | A/B |
+| PARENT_DISPATCH_DETAIL_BO | VARCHAR | 父派工单 BO | 拆分/子派工场景 |
+| CREATE_BY | VARCHAR | 创建人 | 格式如 AI（系统自动）、用户编号 |
+| CREATE_TIME | DATETIME | 创建时间 | |
+| UPDATE_BY | VARCHAR | 更新人 | |
+| UPDATE_TIME | DATETIME | 更新时间 | |
+| PLANNED_START_DATE | DATETIME | 计划开始时间 | |
+| PLANNED_COMP_DATE | DATETIME | 计划完成时间 | |
+| PARTNER_BO | VARCHAR | 客户/供应商 BO | 关联 md_partner.HANDLE |
+| DISPATCH_URGENCY_LEVEL | VARCHAR | 紧急程度 | A/B |
+| PURCHASE_ORDER_NO | VARCHAR | 采购订单号 | |
+| TRANS_ID | VARCHAR | 事务 ID | |
+| DELETE_FLAG | VARCHAR | 删除标记 | N=正常 |
+
+#### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| SHOP_ORDER_BO | pp_shop_order | HANDLE | 拿工单号 SHOP_ORDER、工单状态、数量 |
+| DISPATCH_OPERATION_BO | md_operation | HANDLE | 拿工序编码 OPERATION、描述 |
+| REF_OBJ (REF_TYPE=WORK_CENTER时) | md_work_center | HANDLE | 拿工作中心编码、描述 |
+| PARTNER_BO | md_partner | HANDLE | 拿客户简称、全称 |
+| DISPATCH_NO | pd_production_log | DISPATCH_NO | 一对多，拿该派工单的生产日志明细 |
+| DISPATCH_NO | pd_sfc | REF_GBO (REF_TYPE=dispatch_no时) | 一对多，拿该派工单的 SFC |
+
+#### 常见查询
+
+```
+Q: 查最新派工记录
+→ GET /api/tables/pp_dispatch_detail?sort=CREATE_TIME&order=desc&size=20
+
+Q: 查某天创建的派工单
+→ GET /api/tables/pp_dispatch_detail?filter={"SITE":"3100"}&sort=CREATE_TIME&order=desc&size=100
+→ 小生在结果中过滤 CREATE_TIME 日期
+
+Q: 查某工单的所有派工
+→ GET /api/tables/pp_dispatch_detail?filter={"SITE":"3100","SHOP_ORDER_BO":"<工单BO>"}
+
+Q: 查已完成的派工
+→ GET /api/tables/pp_dispatch_detail?filter={"SITE":"3100","DISPATCH_STATUS":"COMPLETED"}&sort=CREATE_TIME&order=desc&size=50
+
+Q: 查正在生产中的派工
+→ GET /api/tables/pp_dispatch_detail?filter={"SITE":"3100","DISPATCH_STATUS":"RELEASED"}&sort=ACTUAL_START_DATE&order=desc&size=50
+
+Q: 查某客户的派工
+→ GET /api/tables/pp_dispatch_detail?filter={"SITE":"3100","PARTNER_BO":"<客户BO>"}&sort=CREATE_TIME&order=desc&size=50
+```
+
+## 12.1 生产工单 — pp_shop_order
+
+#### 业务知识
+
+- **工单是长期有效的生产计划载体**，QTY_ORDERED 通常为极大值（如 999999999），表示不限制总产量
+- **一张工单可有多次派工**（pp_dispatch_detail），通过 DISPATCH_NO 跟踪每次派工的执行进度
+- **工单状态**：RELEASED（已下达，生产中）为主流
+
+#### 字段说明
+
+| 字段 | 含义 |
+|------|------|
+| HANDLE | 主键 |
+| SITE | 站点 |
+| SHOP_ORDER | 工单号 |
+| SHOP_ORDER_STATUS | 工单状态（RELEASED=已下达） |
+| SHOP_ORDER_CATEGORY | 工单类型 |
+| PLANNED_WORK_CENTER_BO | 计划工作中心 |
+| ACTUAL_START_DATE | 实际开始时间 |
+| ACTUAL_COMP_DATE | 实际完成时间 |
+| QTY_ORDERED | 计划数量（通常极大值） |
+| QTY_RELEASED | 下达数量 |
+| QTY_SCRAPPED | 报废数量 |
+| QTY_DONE | 完工数量 |
+| CREATE_TIME | 创建时间 |
+
+## 12.2 生产日志 — pd_production_log
 
 #### 业务知识
 
@@ -586,3 +699,46 @@ The current date is 2026-06-25.
 | LOCATION | 位置 |
 | CREATE_TIME | 操作时间 |
 | CREATE_BY | 操作人 |
+
+---
+
+## 15. 电流数采 — dc_station_to_electricity
+
+#### 业务知识
+
+- **PLC 采集的槽位电流数据**，STATION 为槽位编号
+- **STATION 与 pd_carrier_binding.LOCATION 对应**：载具绑定的位置就是槽位
+- **DC_TIME** 为数采时间，PLC 为地址位
+
+#### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| STATION | pd_carrier_binding | LOCATION | 槽位与载具绑定位置对应 |
+
+| 字段 | 含义 |
+|------|------|
+| STATION | 槽位编号 |
+| ELECTRICITY | 电流值 |
+| DC_TIME | 数采时间 |
+| PLC | 地址位 |
+
+## 16. 电压数采 — dc_station_to_voltage
+
+#### 业务知识
+
+- **PLC 采集的槽位电压数据**，STATION 为槽位编号
+- **STATION 与 pd_carrier_binding.LOCATION 对应**
+
+#### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| STATION | pd_carrier_binding | LOCATION | 槽位与载具绑定位置对应 |
+
+| 字段 | 含义 |
+|------|------|
+| STATION | 槽位编号 |
+| VOLTAGE | 电压值 |
+| DC_TIME | 数采时间 |
+| PLC | 地址位 |
