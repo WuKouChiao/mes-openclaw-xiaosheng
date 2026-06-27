@@ -533,7 +533,7 @@ The current date is 2026-06-25.
   - PLAN → 已排产，尚未下达
   - RELEASED → 已下达，生产中（QTY_RELEASED > 0）
   - COMPLETED → 已完成（ACTUAL_COMP_DATE 有值）
-- **DISPATCH_CATEGORY**：A=正常派工（绝大多数），B/C=特殊类型（占少数）
+- **DISPATCH_CATEGORY**：A=正常，B=返工，C=客户来料返工
 - **REF_TYPE**：目前全为 WORK_CENTER（工作中心），通过 REF_OBJ 关联 md_work_center
 
 #### 字段说明
@@ -547,7 +547,7 @@ The current date is 2026-06-25.
 | SHOP_ORDER_BO | VARCHAR | 工单 BO | 关联 pp_shop_order.HANDLE |
 | DISPATCH_OPERATION_BO | VARCHAR | 派工工序 BO | 关联 md_operation.HANDLE |
 | DISPATCH_STATUS | VARCHAR | 派工状态 | PLAN/RELEASED/COMPLETED |
-| DISPATCH_CATEGORY | VARCHAR | 派工类型 | A=正常派工, B=特殊, C=特殊 |
+| DISPATCH_CATEGORY | VARCHAR | 派工分类 | A=正常, B=返工, C=客户来料返工 |
 | REF_TYPE | VARCHAR | 关联类型 | 目前全为 WORK_CENTER |
 | REF_OBJ | VARCHAR | 工作中心 BO | 关联 md_work_center.HANDLE |
 | ACTUAL_START_DATE | DATETIME | 实际开始时间 | RELEASED 后赋值 |
@@ -568,7 +568,7 @@ The current date is 2026-06-25.
 | PLANNED_START_DATE | DATETIME | 计划开始时间 | |
 | PLANNED_COMP_DATE | DATETIME | 计划完成时间 | |
 | PARTNER_BO | VARCHAR | 客户/供应商 BO | 关联 md_partner.HANDLE |
-| DISPATCH_URGENCY_LEVEL | VARCHAR | 紧急程度 | A/B |
+| DISPATCH_URGENCY_LEVEL | VARCHAR | 紧急程度 | A=紧急, B=正常 |
 | PURCHASE_ORDER_NO | VARCHAR | 采购订单号 | |
 | TRANS_ID | VARCHAR | 事务 ID | |
 | DELETE_FLAG | VARCHAR | 删除标记 | N=正常 |
