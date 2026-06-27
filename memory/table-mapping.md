@@ -742,3 +742,66 @@ Q: 查某客户的派工
 | VOLTAGE | 电压值 |
 | DC_TIME | 数采时间 |
 | PLC | 地址位 |
+
+## 17. SFC 进出站记录 — dc_seq_in_out_info
+
+#### 业务知识
+
+- **PLC 采集的 SFC 进出槽位时序记录**：每条记录对应一个 SFC 在一个槽位的一次进出站
+- **IN_TIME 有值但 OUT_TIME 为空 → SFC 当前仍在槽位中**（尚未出站）
+- **OUT_TIME 不为空时，USED_TIME（秒）= OUT_TIME - IN_TIME 的实际停留时长**
+- **SET_TIME 是工艺设定的标准处理时间**，与 USED_TIME 对比可判断超时/提前
+- **PROD_SEQ**：PLC 给的序号，按班次递增（白班从 1 开始，夜班重置为 1）
+- **STATION 与 pd_carrier_binding.LOCATION 对应**：可通过此表查"当前哪个 SFC 在哪个槽位"
+- **TOOL_NO**：滚筒号/挂具号
+- **PROG_ID**：程序号（可能关联 md_program）
+
+#### 字段说明
+
+| 字段 | 类型 | 含义 |
+|------|------|------|
+| HANDLE | BIGINT | 主键 |
+| SITE | VARCHAR | 站点 |
+| PROD_SEQ | VARCHAR | 生产序号（PLC 给出，按班次递增，每班从 1 开始） |
+| STATION | VARCHAR | 槽位编号（如 A065） |
+| IN_TIME | DATETIME | 进站时间 |
+| OUT_TIME | DATETIME | 出站时间（为空表示仍在槽中） |
+| USED_TIME | INT | 实际停留时长（秒） |
+| SET_TIME | INT | 工艺设定时间（秒） |
+| TOOL_NO | VARCHAR | 滚筒号/挂具号 |
+| SFC | VARCHAR | SFC 编码（关联 pd_sfc.SFC） |
+| PLC | VARCHAR | PLC 地址位 |
+| PROG_ID | VARCHAR | 程序号（可能关联 md_program） |
+| WEIGHT | DECIMAL | 重量 |
+| REMARK | VARCHAR | 备注 |
+| CREATE_BY | VARCHAR | 创建人（DC=数采自动） |
+| CREATE_TIME | DATETIME | 创建时间 |
+| UPDATE_BY | VARCHAR | 更新人 |
+| UPDATE_TIME | DATETIME | 更新时间 |
+
+#### 关联
+
+| 从字段 | 到表 | 到字段 | 说明 |
+|--------|------|--------|------|
+| SFC | pd_sfc | SFC | 拿 SFC 状态、数量、关联工单等信息 |
+| STATION | pd_carrier_binding | LOCATION | 查载具（挂具/滚筒）在当前槽位的绑定情况 |
+| STATION | dc_station_to_electricity | STATION | 查该槽位实时电流 |
+| STATION | dc_station_to_voltage | STATION | 查该槽位实时电压 |
+| TOOL_NO | pd_carrier_binding | CARRIER_NO | 查载具的其他绑定信息 |
+
+#### 常见查询
+
+```
+Q: 查当前在槽的 SFC（尚未出站）
+→ GET /api/tables/dc_seq_in_out_info?filter={"SITE":"3100"}&sort=IN_TIME&order=desc&size=200
+→ 小生在结果中过滤 OUT_TIME 为空的记录
+
+Q: 查某个 SFC 的进出站历史
+→ GET /api/tables/dc_seq_in_out_info?filter={"SITE":"3100","SFC":"S202606240251"}&sort=IN_TIME&order=desc
+
+Q: 查某个槽位当前在处理哪些 SFC
+→ GET /api/tables/dc_seq_in_out_info?filter={"SITE":"3100","STATION":"A065"}&sort=IN_TIME&order=desc
+
+Q: 查超时记录（USED_TIME > SET_TIME）
+→ 不带时间过滤拉数据，本地比较 USED_TIME > SET_TIME
+```
